@@ -12,7 +12,12 @@ import Vapor
 ///
 /// Based [off the RED Method](https://www.weave.works/blog/the-red-method-key-metrics-for-microservices-architecture/)
 public final class MetricsMiddleware {
-    public init() { }
+    /// Per default set to [.notFound] to ignore 404 errors
+    let ignoreHttpStatus: [HTTPResponseStatus]
+    
+    public init(ignoreHttpStatus: [HTTPResponseStatus] = [.notFound]) {
+        self.ignoreHttpStatus = ignoreHttpStatus
+    }
 }
 
 extension MetricsMiddleware: Middleware {
@@ -25,6 +30,9 @@ extension MetricsMiddleware: Middleware {
             response = request.eventLoop.newFailedFuture(error: error)
         }
         return response.map { response in
+            if self.ignoreHttpStatus.contains(response.http.status) {
+                return response
+            }
             let dimensions = [
                 ("method", request.http.method.string),
                 ("path", request.http.url.path),

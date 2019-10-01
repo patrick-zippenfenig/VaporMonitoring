@@ -37,8 +37,10 @@ extension MetricsMiddleware: Middleware {
                 ("method", request.http.method.string),
                 ("path", request.http.url.path),
                 ("status_code", "\(response.http.status.code)")]
-            let duration = start.timeIntervalSinceNow * -1
-            Metrics.Timer(label: "http_requests", dimensions: dimensions).record(duration)
+                        let duration = start.timeIntervalSinceNow / -1_000_000_000
+            /// Now using a histogram with default buckets, optimised for seconds not nano seconds
+            Metrics.Recorder(label: "http_requests", dimensions: dimensions, aggregate: true).record(duration)
+            //Metrics.Timer(label: "http_requests", dimensions: dimensions).record(duration)
             return response
         }.catchMap { error in
             let dimensions = [
